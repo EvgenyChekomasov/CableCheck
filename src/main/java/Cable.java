@@ -3,6 +3,7 @@ class Cable {
 
     private String profile;
     private String material;
+    private float distance;
     private double rActiv;
     private double xReactive;
     private double zLoop;
@@ -12,14 +13,19 @@ class Cable {
         material = m;
     }
 
-    //public String getMaterial() { return material; }
+    public String getMaterial() { return material; }
 
     //получение сечения жилы
     void setProfile(String s) {
         profile = s;
     }
 
-    //public String getProfile() { return profile; }
+    public String getProfile() { return profile; }
+
+
+    public void setDistance(float distance) {
+        this.distance = distance;
+    }
 
     // Выбор параметров сопротивления в зависимости от материала и сечения жил
     void choiceResistance() {
@@ -179,6 +185,10 @@ class Cable {
 
         }
 
+    }
+
+    public float getDistance() {
+        return distance;
     }
 
     double getrActiv() {
