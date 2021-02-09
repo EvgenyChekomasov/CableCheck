@@ -192,7 +192,7 @@ class Base {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText()));
+            cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText().replaceAll(",", ".")));
             cables.get(fragmentNumber).choiceResistance();
             fragmentNumber++;
             addCable();
@@ -205,9 +205,9 @@ class Base {
     class CurrentCalc implements ActionListener {
 
         public void actionPerformed (ActionEvent event) {
-            double power = Double.parseDouble(inputPower.getText());
-            double cosf = Double.parseDouble(inputCos.getText());
-            cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText()));
+            double power = Double.parseDouble(inputPower.getText().replaceAll(",", "."));
+            double cosf = Double.parseDouble(inputCos.getText().replaceAll(",", "."));
+            cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText().replaceAll(",", ".")));
             cables.get(fragmentNumber).choiceResistance();
             if (voltage == 220) {
                 result = voltage / loopResistance();
