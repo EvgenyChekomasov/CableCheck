@@ -3,6 +3,7 @@ class Cable {
 
     private String profile;
     private String material;
+    private int number;
     private float distance;
     private double longCurrent;
     private double rActiv;
@@ -22,6 +23,15 @@ class Cable {
     }
 
     public String getProfile() { return profile; }
+
+    // количество параллельных кабелей
+    void setNumber (int num) {
+        number = num;
+    }
+
+    public int getNumber() {
+        return number;
+    }
 
 
     public void setDistance(float distance) {

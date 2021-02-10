@@ -9,8 +9,8 @@ class Base {
 
     private int voltage;
     private double current;
-    private double result = 0;
-    private double dU = 0;
+    private double singlePhaseCircuitCurrent;
+    private double dU;
     private Font font;
     private JFrame frame;
     private JPanel mainpanel;
@@ -24,6 +24,7 @@ class Base {
     private JCheckBox triplePhase;
     private JCheckBox alum;
     private JCheckBox cuprum;
+    private JTextField numberOfCables;
     private JTextField inputDist;
     private JTextField inputPower;
     private JTextField inputCos;
@@ -31,6 +32,7 @@ class Base {
 
     private List<Cable> cables = new ArrayList<>();
     private String[] profiles = {"", "1.5", "2.5", "4", "6", "10", "16", "25", "35", "50", "70", "95", "120", "150", "185", "240"};
+    private String[] lines = {"3x", "5x"};
 
     // Графический интерфейс
     void go() {
@@ -51,7 +53,7 @@ class Base {
         // Поле вывода результата
         res();
 
-        frame.setSize(800,300);
+        frame.setSize(800,500);
         frame.setVisible(true);
     }
 
@@ -142,20 +144,29 @@ class Base {
         fragment.add(prof);
         JLabel profile = new JLabel("Сечение жилы, мм2");
         profile.setFont(font);
+        JPanel profPanel = new JPanel();
+        numberOfCables = new JTextField(1);
+        numberOfCables.setText("1");
+        JLabel numOfLine = new JLabel("x ");
+        JComboBox<String> choiceLines = new JComboBox<>(lines);
         JComboBox<String> choiceProfile = new JComboBox<>(profiles);
         choiceProfile.addActionListener(new ProfileChoice(fragmentNumber));
         prof.add(profile);
-        prof.add(choiceProfile);
+        prof.add(profPanel);
+        profPanel.add(numberOfCables);
+        profPanel.add(numOfLine);
+        profPanel.add(choiceLines);
+        profPanel.add(choiceProfile);
 
         // Панель указания длины кабеля
-        JPanel dis = new JPanel();
-        dis.setLayout(new BoxLayout(dis, BoxLayout.Y_AXIS));
-        fragment.add(dis);
-        JLabel dist = new JLabel("Длина участка, км");
+        JPanel distancePanel = new JPanel();
+        distancePanel.setLayout(new BoxLayout(distancePanel, BoxLayout.Y_AXIS));
+        fragment.add(distancePanel);
+        JLabel dist = new JLabel("Длина участка, м");
         dist.setFont(font);
         inputDist = new JTextField(7);
-        dis.add(dist);
-        dis.add(inputDist);
+        distancePanel.add(dist);
+        distancePanel.add(inputDist);
 
         JButton addButton = new JButton("+ участок");
         addButton.addActionListener(new CableAddition());
@@ -178,16 +189,10 @@ class Base {
         buttonPane.add(buttonClear);
     }
 
-    // Вывод результатов расчета тока КЗ
-    private String calcResult1() {
-        return String.format("%.3f", result);
+    // форматирование результата расчета
+    private String calcResult(Double input) {
+        return String.format("%.3f", input);
 }
-
-    // Вывод результатов расчета потери напряжения
-    private String calcResult2() {
-        return String.format("%.3f", dU);
-    }
-
     // добавление  кабеля
     class CableAddition implements ActionListener {
 
@@ -195,6 +200,7 @@ class Base {
         public void actionPerformed(ActionEvent e) {
             cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText().replaceAll(",", ".")));
             cables.get(fragmentNumber).choiceResistance();
+            cables.get(fragmentNumber).setNumber(Integer.parseInt(numberOfCables.getText()));
             fragmentNumber++;
             addCable();
             frame.validate();
@@ -210,7 +216,8 @@ class Base {
             double cosf = Double.parseDouble(inputCos.getText().replaceAll(",", "."));
             cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText().replaceAll(",", ".")));
             cables.get(fragmentNumber).choiceResistance();
-            result = 220 / loopResistance();
+            cables.get(fragmentNumber).setNumber(Integer.parseInt(numberOfCables.getText()));
+            singlePhaseCircuitCurrent = 220 / loopResistance();
             if (voltage == 220) {
                 //result = voltage / loopResistance();
                 dU = power * loopResistance() * 1000 * 100 / Math.pow(voltage,2);
@@ -224,11 +231,13 @@ class Base {
                 } else {
                     current = power / (0.66 * cosf);
                 }
-                results.setText("Ток однофазного короткого замыкания, А - " + calcResult1() + "\n" +
-                        "Потеря напряжения в кабеле, % - " + calcResult2() + "\n" +
+                results.setText("Ток однофазного короткого замыкания - " + calcResult(singlePhaseCircuitCurrent) + " A" + "\n" +
+                        "Потеря напряжения в кабеле - " + calcResult(dU) + "%" + "\n" +
+                        "Номинальный ток - " + calcResult(current) + " А" + "\n" +
+                        "Кратность тока однофазного КЗ - " + calcResult(singlePhaseCircuitCurrent / current) + "\n" +
                         profilCheck());
             } else {
-                results.setText("Ток однофазного короткого замыкания, А - " + calcResult1() + "\n" +
+                results.setText("Ток однофазного короткого замыкания - " + calcResult(singlePhaseCircuitCurrent) + " A" + "\n" +
                         "Некорректная величина коэффициента мощности");
             }
         }
@@ -237,7 +246,7 @@ class Base {
     double loopResistance() {
         double fullResistance = 0;
         for (Cable cable : cables) {
-            fullResistance += cable.getzLoop() * cable.getDistance();
+            fullResistance += cable.getzLoop() * cable.getDistance() / (cable.getNumber() * 1000);
         }
         return fullResistance;
     }
@@ -245,7 +254,7 @@ class Base {
     double activeResistance() {
         double fullResistance = 0;
         for (Cable cable : cables) {
-            fullResistance += cable.getrActiv() * cable.getDistance();
+            fullResistance += cable.getrActiv() * cable.getDistance() / (cable.getNumber() * 1000);
         }
         return fullResistance;
     }
@@ -253,7 +262,7 @@ class Base {
     double reactiveResistance() {
         double fullResistance = 0;
         for (Cable cable : cables) {
-            fullResistance += cable.getxReactive() * cable.getDistance();
+            fullResistance += cable.getxReactive() * cable.getDistance() / (cable.getNumber() * 1000);
         }
         return fullResistance;
     }
@@ -270,17 +279,15 @@ class Base {
             JComboBox box = (JComboBox)e.getSource();
             String item = (String)box.getSelectedItem();
             cables.get(fragmentNumber).setProfile(item);
-           //System.out.println(cable.getMaterial());
-           // System.out.println(cable.getProfile());
         }
     }
 
     // проверка выбранного сечения по длительно допустимому току
     String profilCheck() {
-        StringBuilder str = new StringBuilder("");
+        StringBuilder str = new StringBuilder();
         for (Cable cable : cables) {
-            if (cable.getLongCurrent() < current) {
-                str.append("Необходимо увеличить сечение кабеля для участка ").append(cables.indexOf(cable) + 1).append("\n");
+            if (cable.getLongCurrent() < current / cable.getNumber()) {
+                str.append("Превышение длительно допустимого тока! Необходимо увеличить сечение кабеля для участка ").append(cables.indexOf(cable) + 1).append("\n");
             }
         }
         return str.toString();
