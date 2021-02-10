@@ -8,6 +8,7 @@ import java.util.List;
 class Base {
 
     private int voltage;
+    private double current;
     private double result = 0;
     private double dU = 0;
     private Font font;
@@ -209,18 +210,25 @@ class Base {
             double cosf = Double.parseDouble(inputCos.getText().replaceAll(",", "."));
             cables.get(fragmentNumber).setDistance(Float.parseFloat(inputDist.getText().replaceAll(",", ".")));
             cables.get(fragmentNumber).choiceResistance();
+            result = 220 / loopResistance();
             if (voltage == 220) {
-                result = voltage / loopResistance();
+                //result = voltage / loopResistance();
                 dU = power * loopResistance() * 1000 * 100 / Math.pow(voltage,2);
             } else {
-                result = voltage / (Math.sqrt(3)*Math.sqrt(Math.pow(activeResistance(), 2) + Math.pow(reactiveResistance(), 2)));
+                //result = voltage / (Math.sqrt(3)*Math.sqrt(Math.pow(activeResistance(), 2) + Math.pow(reactiveResistance(), 2)));
                 dU = (power * activeResistance() + power * Math.tan(Math.acos(cosf))*reactiveResistance()) * 1000 * 100 / Math.pow(voltage,2);
             }
             if (cosf <= 1 && cosf > 0) {
-                results.setText("Ток короткого замыкания, А - " + calcResult1() + "\n" +
-                        "Потеря напряжения в кабеле, % - " + calcResult2());
+                if (voltage == 220) {
+                    current = power  / (0.22 * cosf);
+                } else {
+                    current = power / (0.66 * cosf);
+                }
+                results.setText("Ток однофазного короткого замыкания, А - " + calcResult1() + "\n" +
+                        "Потеря напряжения в кабеле, % - " + calcResult2() + "\n" +
+                        profilCheck());
             } else {
-                results.setText("Ток короткого замыкания, А - " + calcResult1() + "\n" +
+                results.setText("Ток однофазного короткого замыкания, А - " + calcResult1() + "\n" +
                         "Некорректная величина коэффициента мощности");
             }
         }
@@ -267,6 +275,18 @@ class Base {
         }
     }
 
+    // проверка выбранного сечения по длительно допустимому току
+    String profilCheck() {
+        StringBuilder str = new StringBuilder("");
+        for (Cable cable : cables) {
+            if (cable.getLongCurrent() < current) {
+                str.append("Необходимо увеличить сечение кабеля для участка ").append(cables.indexOf(cable) + 1).append("\n");
+            }
+        }
+        return str.toString();
+    }
+
+    // очистка окна
     class ClearAll implements ActionListener {
 
         @Override
